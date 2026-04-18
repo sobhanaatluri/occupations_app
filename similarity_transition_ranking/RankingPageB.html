@@ -1,0 +1,520 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block content %}
+<style>
+    body {
+        background-color: rgb(240, 238, 238);
+        overflow: hidden; /* Prevent scrolling */
+        height: 100vh; /* Ensure content fits in viewport */
+    }
+
+    .otree-title {
+        display: none;
+    }
+
+    .otree-body {
+        max-width: 90vw;
+        min-height: 100%;
+        background-color: rgb(240, 238, 238);
+    }
+
+    .ranking-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 40px;
+    }
+
+    .instructions {
+        width: 25%;
+        text-align: left;
+        margin-top: -50px;
+    }
+
+    .ranking-bin-container {
+        width: 65%;
+    }
+
+    .ranking-bin {
+        display: flex;
+        align-items: flex-start;
+        width: 80%;
+    }
+
+    .rank-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 550px; /* Prevent shrinking */
+        margin-bottom: -20px; /* Reduce extra spacing */
+    }
+
+    .vertical-text {
+        writing-mode: vertical-lr;
+        transform: rotate(180deg);
+        font-size: 2.5em;
+        margin-left: 2em;
+        margin-right: .5em;
+    }
+
+    .rank-item {
+        display: flex;
+        align-items: center;
+        width: 80%;
+        height: 50px;
+        border: 1px solid #ccc;
+        margin-bottom: 5px;
+        background-color: white;
+        border-radius: 12px;
+        position: relative;
+        justify-content: left;
+        box-sizing: border-box; /* Ensure padding is included in height */
+    }
+
+    .rank-number {
+        padding-left: 10px;
+        font-weight: bold;
+    }
+
+    .rank-item:empty {
+        border: 2px dashed #ccc;
+        min-height: 50px;
+        border-radius: 12px;
+    }
+
+    .drag-container {
+        display: grid;
+        grid-template-rows: repeat(2, 65px);
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        width: 100%;
+        max-width: 100%;
+        min-height: 150px;
+        margin: 50px auto 0 auto;
+        padding: 0 20px;
+    }
+    
+    /* Use grid-template-areas for precise layout control */
+    .drag-container {
+        grid-template-areas:
+            "item1 item2 item3 item4 item5"
+            "item6 item7 item8 item9 empty";
+    }
+    
+    /* Assign each item to a specific grid area */
+    .drag-container .grid-item-1 { grid-area: item1; }
+    .drag-container .grid-item-2 { grid-area: item2; }
+    .drag-container .grid-item-3 { grid-area: item3; }
+    .drag-container .grid-item-4 { grid-area: item4; }
+    .drag-container .grid-item-5 { grid-area: item5; }
+    .drag-container .grid-item-6 { grid-area: item6; }
+    .drag-container .grid-item-7 { grid-area: item7; }
+    .drag-container .grid-item-8 { grid-area: item8; }
+    .drag-container .grid-item-9 { grid-area: item9; }
+
+    .drag-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: white;
+        border: 1px solid #ccc;
+        text-align: center;
+        font-size: 16px;
+        width: 250px;
+        height: 50px;
+        position: relative;
+        border-radius: 12px;
+        cursor: default;
+        transition: background-color 0.3s ease;
+        margin-bottom: 0px;
+        box-sizing: border-box; /* Ensure padding is included in height */
+    }
+
+    .ranked-item {
+        width: 100% !important;
+        height: 50px !important;
+    }
+
+    /* Prevent hover effect on adjacent items when dragging */
+    .drag-item:hover:not(.dragging) {
+        background-color: #e0e0e0;
+    }
+
+    /* Ensure dragged item stays visually distinct */
+    .dragging {
+        opacity: 0.8;
+        background-color: #f0f0f0;
+    }
+
+    .drag-over {
+        border: 2px dashed #000;
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+    <div id="drag-container" class="drag-container" ondrop="handleUnrankDrop(event)" ondragover="allowDrop(event)" style="flex: 1;">
+    </div>
+    <div id="top-right-button" style="margin-top: 65px; margin-right: 20px;">
+        <button type="submit" class="btn btn-primary" id="submit-button" disabled>Submit Ranking</button>
+    </div>
+</div>
+
+<div class="ranking-container">
+    <div class="instructions">
+        <p style="font-size: 18px;">
+            Please rank the <strong>factors you consider important when transitioning jobs</strong> by dragging them to the ranking area.<br><br>
+            The factor at the <strong>top</strong> should be the <strong>most important</strong> when making a career transition.
+        </p>
+    </div>
+    
+    <div class="ranking-bin-container">
+        <div class="flex-container">
+            <div class="ranking-bin">
+                <div class="vertical-text">Rankings</div>
+                <div class="rank-column">
+                    {% for i in range(9) %}
+                        <div class="rank-item" id="rank-{{ forloop.counter0 }}" draggable="false" ondrop="handleRankDrop(event)" ondragover="allowDrop(event)">
+                            <div class="rank-number">#{{ forloop.counter }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="post" id="transition-form">
+    <input type="hidden" name="transition_order" value="">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const transitionOptions = {{ ranking_options|safe }};
+    const dragContainer = document.getElementById('drag-container');
+    
+    // Store initial positions for returning items to original locations
+    const initialPositions = {};
+    
+    function createDraggable(index, name) {
+        const dI = document.createElement('div');
+        dI.classList.add('drag-item');
+        dI.classList.add(`grid-item-${index + 1}`); // Add grid position class
+        dI.setAttribute('draggable', true);
+        dI.id = `transition_${index}`;
+        dI.dataset.originalIndex = index;
+        dI.dataset.originalText = name;
+        dI.dataset.gridPosition = index + 1; // Store original grid position
+        dI.textContent = name;
+
+        // Store initial position for returning items
+        initialPositions[dI.id] = {
+            container: dragContainer,
+            gridPosition: index + 1
+        };
+
+        attachDragEventListeners(dI);
+        return dI;
+    }
+
+    function renderDragDrop() {
+        transitionOptions.forEach((option, index) => {
+            const dragItem = createDraggable(index, option);
+            dragContainer.appendChild(dragItem);
+        });
+    }
+
+    function attachDragEventListeners(item) {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragend', handleDragEnd);
+    }
+
+    function handleDragStart(e) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData("text/plain", this.id);
+        
+        // Store the source container and position
+        if (this.parentNode.classList.contains('rank-item')) {
+            e.dataTransfer.setData("source-rank", this.parentNode.id);
+        } else {
+            e.dataTransfer.setData("source-rank", "");
+        }
+        
+        e.target.classList.add('dragging');
+    }
+
+    function handleDragEnd(e) {
+        e.target.classList.remove('dragging');
+    }
+
+    function allowDrop(e) {
+        e.preventDefault();
+    }
+
+    function handleRankDrop(e) {
+        e.preventDefault();
+        const dropTarget = e.currentTarget;
+        const draggedItemId = e.dataTransfer.getData("text/plain");
+        const sourceRankId = e.dataTransfer.getData("source-rank");
+        const draggedItem = document.getElementById(draggedItemId);
+        
+        if (!draggedItem) return;
+        
+        // Get the current rank position
+        const targetRankIndex = parseInt(dropTarget.id.split('-')[1]);
+        
+        // Save the rank number element
+        const rankNumber = dropTarget.querySelector('.rank-number');
+        
+        // Check if this is a move from one rank to another
+        if (sourceRankId) {
+            const sourceRankIndex = parseInt(sourceRankId.split('-')[1]);
+            
+            // Check if we're moving from lower rank to higher rank (moving up)
+            if (sourceRankIndex > targetRankIndex) {
+                // Moving up - swap items
+                
+                // Get the item in the target rank
+                const targetItem = dropTarget.querySelector('.drag-item');
+                
+                // Remove dragged item from its current position
+                const sourceRank = document.getElementById(sourceRankId);
+                if (draggedItem.parentNode === sourceRank) {
+                    sourceRank.removeChild(draggedItem);
+                }
+                
+                // Preserve rank numbers
+                const sourceRankNumber = sourceRank.querySelector('.rank-number');
+                sourceRank.innerHTML = '';
+                if (sourceRankNumber) {
+                    sourceRank.appendChild(sourceRankNumber);
+                }
+                
+                // If there's an item in the target, move it to the source
+                if (targetItem) {
+                    dropTarget.removeChild(targetItem);
+                    dropTarget.innerHTML = '';
+                    if (rankNumber) {
+                        dropTarget.appendChild(rankNumber);
+                    }
+                    
+                    targetItem.classList.add('ranked-item');
+                    sourceRank.appendChild(targetItem);
+                }
+                
+                // Add dragged item to target
+                draggedItem.classList.add('ranked-item');
+                dropTarget.appendChild(draggedItem);
+            } else if (sourceRankIndex < targetRankIndex) {
+                // Moving down - leave source empty, shift items down
+                
+                // Get the item in the target rank
+                const targetItem = dropTarget.querySelector('.drag-item');
+                
+                // Remove dragged item from its current position
+                const sourceRank = document.getElementById(sourceRankId);
+                if (draggedItem.parentNode === sourceRank) {
+                    sourceRank.removeChild(draggedItem);
+                }
+                
+                // Preserve the source rank number
+                const sourceRankNumber = sourceRank.querySelector('.rank-number');
+                sourceRank.innerHTML = '';
+                if (sourceRankNumber) {
+                    sourceRank.appendChild(sourceRankNumber);
+                }
+                
+                // Collect items from target down that need to be shifted
+                const itemsToShift = [];
+                if (targetItem) {
+                    itemsToShift.push(targetItem);
+                }
+                
+                for (let i = targetRankIndex + 1; i < 9; i++) {
+                    const rank = document.getElementById(`rank-${i}`);
+                    const item = rank.querySelector('.drag-item');
+                    if (item) {
+                        itemsToShift.push(item);
+                    }
+                }
+                
+                // Remove all these items from their ranks
+                itemsToShift.forEach(item => {
+                    item.parentNode.removeChild(item);
+                });
+                
+                // Add dragged item to target
+                dropTarget.innerHTML = '';
+                if (rankNumber) {
+                    dropTarget.appendChild(rankNumber);
+                }
+                draggedItem.classList.add('ranked-item');
+                dropTarget.appendChild(draggedItem);
+                
+                // Shift the remaining items down
+                for (let i = 0; i < itemsToShift.length; i++) {
+                    const item = itemsToShift[i];
+                    const targetRank = document.getElementById(`rank-${targetRankIndex + i + 1}`);
+                    
+                    // If we have a valid rank to place in
+                    if (targetRank && targetRankIndex + i + 1 < 9) {
+                        const targetRankNumber = targetRank.querySelector('.rank-number');
+                        targetRank.innerHTML = '';
+                        if (targetRankNumber) {
+                            targetRank.appendChild(targetRankNumber);
+                        }
+                        item.classList.add('ranked-item');
+                        targetRank.appendChild(item);
+                    } else {
+                        // Return to drag container
+                        returnItemToContainer(item);
+                    }
+                }
+            }
+            // If source == target, do nothing special
+        } else {
+            // Coming from drag container - handle insertion and shifting
+            
+            // Get the item in the target rank
+            const existingItem = dropTarget.querySelector('.drag-item');
+            
+            if (existingItem) {
+                // If target rank has an item, we need to collect all items from this position and shift them down
+                const itemsToShift = [existingItem];
+                
+                for (let i = targetRankIndex + 1; i < 9; i++) {
+                    const rank = document.getElementById(`rank-${i}`);
+                    const item = rank.querySelector('.drag-item');
+                    if (item) {
+                        itemsToShift.push(item);
+                    }
+                }
+                
+                // Remove all these items from their ranks
+                itemsToShift.forEach(item => {
+                    item.parentNode.removeChild(item);
+                });
+                
+                // Clear target and add new item
+                dropTarget.innerHTML = '';
+                if (rankNumber) {
+                    dropTarget.appendChild(rankNumber);
+                }
+                draggedItem.classList.add('ranked-item');
+                dropTarget.appendChild(draggedItem);
+                
+                // Shift the other items down
+                for (let i = 0; i < itemsToShift.length; i++) {
+                    const item = itemsToShift[i];
+                    const shiftTarget = document.getElementById(`rank-${targetRankIndex + i + 1}`);
+                    
+                    if (shiftTarget && targetRankIndex + i + 1 < 9) {
+                        const shiftTargetNumber = shiftTarget.querySelector('.rank-number');
+                        shiftTarget.innerHTML = '';
+                        if (shiftTargetNumber) {
+                            shiftTarget.appendChild(shiftTargetNumber);
+                        }
+                        item.classList.add('ranked-item');
+                        shiftTarget.appendChild(item);
+                    } else {
+                        // Return to container if we run out of ranks
+                        returnItemToContainer(item);
+                    }
+                }
+            } else {
+                // If rank is empty, just add the item
+                dropTarget.innerHTML = '';
+                if (rankNumber) {
+                    dropTarget.appendChild(rankNumber);
+                }
+                draggedItem.classList.add('ranked-item');
+                dropTarget.appendChild(draggedItem);
+            }
+        }
+        
+        rankingUpdate();
+    }
+    
+    function returnItemToContainer(item) {
+        // Reset styles to original
+        item.classList.remove('ranked-item');
+        item.style.width = '250px';
+        item.style.height = '50px';
+        
+        // Return to drag container
+        dragContainer.appendChild(item);
+        
+        // Ensure the item retains its grid position class
+        const gridPosition = item.dataset.gridPosition;
+        
+        // Remove any other grid position classes that might have been added
+        for (let i = 1; i <= 9; i++) {
+            if (i !== parseInt(gridPosition)) {
+                item.classList.remove(`grid-item-${i}`);
+            }
+        }
+        
+        // Make sure the original grid position class is applied
+        item.classList.add(`grid-item-${gridPosition}`);
+    }
+
+    function handleUnrankDrop(e) {
+        e.preventDefault();
+        const draggedItemId = e.dataTransfer.getData("text/plain");
+        const draggedItem = document.getElementById(draggedItemId);
+        
+        if (!draggedItem) return;
+        
+        // Only handle if it's coming from a rank item
+        if (draggedItem.parentNode && draggedItem.parentNode.classList.contains('rank-item')) {
+            // Preserve the rank number
+            const rankItem = draggedItem.parentNode;
+            const rankNumber = rankItem.querySelector('.rank-number');
+            
+            // Remove the drag item
+            rankItem.removeChild(draggedItem);
+            
+            // Reset the rank item but keep the number
+            rankItem.innerHTML = '';
+            if (rankNumber) {
+                rankItem.appendChild(rankNumber);
+            }
+            
+            // Return the item to the container
+            returnItemToContainer(draggedItem);
+            
+            rankingUpdate();
+        }
+    }
+
+    function rankingUpdate() {
+        let orderedValues = [];
+        let rankers = document.getElementsByClassName("rank-item");
+        let count_ranked = 0;
+
+        for (let i = 0; i < rankers.length; i++) {
+            let rankedItem = rankers[i].querySelector(".drag-item");
+            if (rankedItem) {
+                orderedValues.push(rankedItem.dataset.originalText);
+                count_ranked++;
+            }
+        }
+
+        document.querySelector("input[name='transition_order']").value = orderedValues.join(",");
+        document.getElementById("submit-button").disabled = count_ranked !== rankers.length;
+    }
+
+    document.getElementById('submit-button').addEventListener('click', function() {
+        document.getElementById('transition-form').submit();
+    });
+
+    renderDragDrop();
+</script>
+{% endblock %}

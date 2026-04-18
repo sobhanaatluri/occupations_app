@@ -1,0 +1,40 @@
+{% extends "global/Page.html" %}
+{% block content %}
+<div class="container">
+    <p style="font-size: 18px;">We will move to the next part of the survey now.</p>
+    
+    <form method="post">
+        <button type="submit" class="btn btn-primary">Next</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    html, body {
+        height: 100vh; /* Ensure full height */
+        margin: 0; /* Remove default margin */
+        }
+    
+    .container {
+        /*display: flex;
+        flex-direction: column; /* Align children vertically */
+        justify-content: center; /* Vertically center content */
+        align-items: center; /* Horizontally center content */
+        min-height: 100%;
+        text-align: left;
+    }
+    
+    .container .btn-primary {
+        margin-top: 20px; /* Adjust the value to your preference */
+        width: auto; 
+        align-self: flex-start;
+    }
+    
+    .container > * { /* Target all direct children of .container */
+        width: 100%; /* Make children take up full width */
+        text-align: left; /* Align text to the left within each child */
+    }
+    
+</style>
+{% endblock %}

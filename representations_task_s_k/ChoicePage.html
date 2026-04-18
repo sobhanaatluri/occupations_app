@@ -1,0 +1,247 @@
+{% extends "global/Page.html" %}
+
+{% block content %}
+<div class="container" style="display:inline-block">
+    <p id="focalJobText" style="text-align: left" >Imagine you are mentoring a colleague who is considering changing occupations from the role of <strong><span id="focalJob"></span></strong> and the colleague approaches you for advice. Consider the following pair of occupations. <br><br>Which job do you think is the <em>closest match</em> to the role of <strong><span id="focalJob1"></span></strong>?</p>
+    <div class="choices" id="choices">
+        <div id="choice1" class="choice-box" onclick="makeChoice(1)" style="text-align: center"></div>
+        <div id="choice2" class="choice-box" onclick="makeChoice(2)" style="text-align: center"></div>
+    </div>
+    <div class="choices" id="instructions">
+        <div id="left" class="instruct-box" style="text-align: center"><p>(<strong>&#8592;</strong>) left arrow</p></div>
+        <div id="right" class="instruct-box" style="text-align: center"><p>(<strong>&#8594;</strong>) right arrow</p></div>
+    </div>
+    <div id="thankYouText" style="display: none; text-align: left; margin-top: 20px;">
+        Thank you for your responses. <br><br>Click next to move to the next part of the survey.
+    </div>
+    <form method="post" id="choiceForm">
+        <input type="hidden" name="choice_sk" id="choiceInput">
+        <input type="hidden" name="time_sk" id="timeInput">
+        <input type="hidden" name="target_job1_sk" id="target1Input">
+        <input type="hidden" name="target_job2_sk" id="target2Input">
+        <button type="submit" class="btn btn-primary" id="nxtbtn" style="display:none">Next</button>
+    </form>
+</div>
+{% endblock %}
+
+
+{% block style %}
+<style>
+    
+html, body {
+        height: 100%; /* Ensure full height */
+        /*margin: 0; /* Remove default margin */
+
+        }
+.container, .container * {
+    cursor: not-allowed; /* Disable cursor for all elements within the container */
+}
+
+.container {
+        /*display: flex;
+        width: 100vh;
+        flex-direction: column; /* Align children vertically */
+        justify-content: center; /* Vertically center content */
+        align-items: center; /* Horizontally center content */
+        /*height: 100%;*/
+        overflow: auto;
+        min-height: 100%;
+    }
+.choices {
+
+    display: flex;
+    flex-direction: row; /* This will arrange the choice boxes side by side */
+    justify-content: space-around;
+    margin-top: 20px;
+    gap: 10vh; /* Reduced gap between boxes */
+    cursor: not-allowed;
+}
+
+.choice-box {
+    flex: 1; /* Make both boxes equal width */
+    display: flex;
+    height: 15vh; /* Adaptive height based on screen size */
+    min-height: 150px; /* Minimum height for smaller screens */
+    border: 1px solid #000;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.5s; /* Smooth transition for background color */
+    cursor: not-allowed;
+    border-radius: 10px; /* Rounded corners */
+}
+    
+.choice-box1 {
+    flex: 1; /* Make both boxes equal width */
+    display: flex;
+    /*height: 15vh; /* Adaptive height based on screen size */
+    /*min-height: 150px; /* Minimum height for smaller screens */
+    border: 0px;
+    justify-content: center;
+    align-items: center;
+    /*transition: background-color 0.5s; /* Smooth transition for background color */
+    cursor: not-allowed;
+    /*border-radius: 10px; /* Rounded corners */
+}
+
+.selected {
+    background-color: #0d6efd;/*#D3D3D3#4CAF50; /* Green background */
+    color: white; /* White text */
+}
+    
+.container .btn-primary {
+        margin-top: 20px; /* Adjust the value to your preference */
+        width: auto; 
+        align-self: flex-start;
+    }
+</style>
+{% endblock %}
+
+
+{% block script %}
+<script>
+var currentIndex = 0; // Track the current index in the list
+var targetjob1 = []; // Array to store job on left
+var targetjob2 = []; // Array to store job on right
+var choicesMade = []; // Store the choices made by the participant
+var timeTaken = []; // Array to store time taken for each pair
+var startTime; // Variable to store the start time when a pair is displayed
+
+// Dynamic data passed from the server
+var focalJobs = {{ focal_job }};
+var targetJobs1 = {{ target_job_1 }};
+var targetJobs2 = {{ target_job_2 }};
+    
+    
+function updateContent() {
+    document.getElementById('focalJob').innerText = focalJobs[currentIndex];
+    document.getElementById('focalJob1').innerText = focalJobs[currentIndex];
+    document.getElementById('choice1').innerText = targetJobs1[currentIndex];
+    document.getElementById('choice2').innerText = targetJobs2[currentIndex];
+    
+    targetjob1.push(targetJobs1[currentIndex]); // Save job on the left
+    targetjob2.push(targetJobs2[currentIndex]); // Save job on the left
+
+    if (currentIndex === focalJobs.length - 1) {
+        // Show the Next button on the last item, before selection
+        //document.getElementById('thankYouText').style.display = 'block';
+        //document.getElementById('nxtbtn').style.display = 'block';
+    } else {
+        document.getElementById('thankYouText').style.display = 'none';
+        document.getElementById('nxtbtn').style.display = 'none'; // Hide Next button for items other than the last one
+        // Record the start time when the new content is displayed
+        startTime = new Date().getTime(); // Get time in milliseconds
+    }
+    
+    document.getElementById('target1Input').value = targetjob1.join('+') //JSON.stringify(targetjob1);
+    document.getElementById('target2Input').value = targetjob2.join('+') //JSON.stringify(targetjob2);
+    
+}
+    
+function updatechoices(choiceIndex){
+    
+    // Capture end time and calculate the duration
+    var endTime = new Date().getTime();
+    var duration = endTime - startTime; // Duration in milliseconds
+    choicesMade.push(choiceIndex); // Save the choice
+    timeTaken.push(duration); // Save the duration for this choice
+    document.getElementById('choiceInput').value = JSON.stringify(choicesMade);
+    document.getElementById('timeInput').value = JSON.stringify(timeTaken);
+    console.log("updateChoices")
+    console.log(currentIndex)
+    console.log(JSON.stringify(choicesMade))
+    console.log(choicesMade.length)
+    console.log("changed code")
+
+}
+function highlightAndProceed(choiceIndex) {
+    var selectedChoice = document.getElementById('choice' + choiceIndex);
+    selectedChoice.classList.add('selected');
+    
+    // Capture end time and calculate the duration
+    //var endTime = new Date().getTime();
+    //var duration = endTime - startTime; // Duration in milliseconds
+    //choicesMade.push(choiceIndex); // Save the choice
+    //timeTaken.push(duration); // Save the duration for this choice
+    //document.getElementById('choiceInput').value = JSON.stringify(choicesMade);
+    //document.getElementById('timeInput').value = JSON.stringify(timeTaken);
+
+    setTimeout(function() {
+        selectedChoice.classList.remove('selected');
+
+        //choicesMade.push(choiceIndex); // Save the choice
+        //timeTaken.push(duration); // Save the duration for this choice
+        
+        //document.getElementById('choiceInput').value = JSON.stringify(choicesMade);
+        //document.getElementById('timeInput').value = JSON.stringify(timeTaken);
+        
+        //currentIndex++;
+
+        if (currentIndex < focalJobs.length) {
+            updateContent(); // Update content for the next item
+        } else {
+            displayNext(); // Show the thank you text and Next button
+        }
+    }, 500); // 500ms timeout for highlighting
+
+    //document.getElementById('choiceInput').value = JSON.stringify(choicesMade);
+    //console.log("Num of choices_1: " + choicesMade.length)
+    //console.log("input:"+JSON.stringify(choicesMade))
+    //document.getElementById('timeInput').value = JSON.stringify(timeTaken); // Update the time input with the list of times
+}
+
+function displayNext() {
+    
+    // Remove the 'not-allowed' cursor style from the container and its children
+    document.querySelector('.container').style.cursor = 'auto';
+    var containerChildren = document.querySelector('.container').querySelectorAll('*');
+    containerChildren.forEach(function(child) {
+        child.style.cursor = 'auto';
+    });
+    
+    document.getElementById('focalJobText').style.display = 'none';
+    document.getElementById('choices').style.display = 'none';
+    document.getElementById('instructions').style.display = 'none';
+    document.getElementById('thankYouText').style.display = 'block';
+    document.getElementById('nxtbtn').style.display = 'block';
+}
+
+// Listen for keydown events for left and right arrow keys
+// if (currentIndex < focalJobs.length){
+//     document.addEventListener('keydown', function(event) {
+//         if (event.keyCode === 37) { // Left arrow key
+//             console.log(focalJobs.length)
+//             console.log("left")
+//             updatechoices(1)
+//             highlightAndProceed(1);
+//         } else if (event.keyCode === 39) { // Right arrow key
+//             console.log(focalJobs.length)
+//             console.log("right")
+//             updatechoices(2)
+//             highlightAndProceed(2);
+//         }
+//     });
+// }
+document.addEventListener('keydown', function(event) {
+    if (event.keyCode === 37) { // Left arrow key
+        if (currentIndex < focalJobs.length){
+            console.log(currentIndex)
+            console.log("left")
+            updatechoices(1)
+            currentIndex++;// new addition
+            highlightAndProceed(1);
+        }
+        
+    } else if (event.keyCode === 39) { // Right arrow key
+        if (currentIndex < focalJobs.length){
+            console.log(currentIndex)
+            console.log("right")
+            updatechoices(2)
+            currentIndex++; // new addition
+            highlightAndProceed(2);
+        }
+    }
+});
+
+updateContent(); // Initial call to display the first set of options
+</script>
+{% endblock %}

@@ -1,0 +1,6 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+*.csv filter=lfs diff=lfs merge=lfs -text
+representations_v2/all_embed.csv filter=lfs diff=lfs merge=lfs -text
+representations_task_s_k/master_dist_skwa.csv filter=lfs diff=lfs merge=lfs -text
+representations_task_s_wa/master_dist_skwa.csv filter=lfs diff=lfs merge=lfs -text

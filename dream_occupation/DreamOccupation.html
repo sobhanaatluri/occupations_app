@@ -1,0 +1,72 @@
+{% extends "global/Page.html" %}
+{% block content %}
+<div class="container">
+
+<form id="questionsForm" method="post">
+    <div id="question1" class="question">
+        <p style="font-size: 18px;">We would like to know about your dream role. <br><br> We will try to match our input with occupations in our database. Use <strong><em>specific terms </em></strong> or the name you would use when first meeting someone. In case you are independent, self-employed, a student, a researcher, provide a specific title that matches your field/domain/discipline and the kind of work you do. Avoid company names, acronyms or abbreviations.<br><br>Having more context will help us find the right match.<br><br>Instead of generic titles, provide the detailed title you'd use when introducing yourself professionally. For example:</p>
+<ul>
+  <li>Instead of "Manager" → "Retail Operations Manager" or "Digital Marketing Manager"</li>
+  <li>Instead of "Research Assistant/Scientist" → "Biochemistry Research Scientist" or "Economist"</li>
+  <li>Instead of "Engineer" → "Civil Engineer" or "Aerospace Engineer"</li>
+  <li>Instead of "Entrepreneur" → "Chief Executive Officer"</li>
+  <li>Instead of "Developer" → "Software Developer"</li>
+</ul>
+        <p style="font-size: 18px;">Searching our database might take a minute. Then, we will ask you to pick the closest match to your from a list of options. <br><br><em> {{ custom_text }}</em></p>
+        <p><strong>{{ form.dream_occupation.label }}</strong></p>
+        {{ form.dream_occupation }}
+    <button type="submit" style="display: inline-block;" class="btn btn-primary">Next</button>
+    </div>
+</form>
+    </div>
+{% endblock %}
+
+{% block style %}
+<style>
+    
+    html, body {
+        height: 100vh; /* Ensure full height */
+        margin: 0; /* Remove default margin */
+        }
+    
+    .container {
+        /*display: flex;
+        flex-direction: column; /* Align children vertically */
+        justify-content: center; /* Vertically center content */
+        align-items: center; /* Horizontally center content */
+        min-height: 100%;
+        text-align: left;
+        font-size: 18px;
+    }
+    
+    .container .btn-primary {
+        margin-top: 20px; /* Adjust the value to your preference */
+        width: auto; 
+        align-self: flex-start;
+    }
+    
+    .container > * { /* Target all direct children of .container */
+        width: 100%; /* Make children take up full width */
+        text-align: left; /* Align text to the left within each child */
+    }
+    
+    .custom-textbox {
+    width: 300px; /* Adjust the width as needed */
+    height: 40px; /* Adjust the height as needed */
+    font-size: 16px; /* Adjust the font size as needed */
+}
+    
+    .form-control-textarea {
+        height: 6em; /* Adjust based on your font size and line height */
+        width: 50%;
+        /* Additional styling if needed */
+    }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+
+
+</script>
+{% endblock %}

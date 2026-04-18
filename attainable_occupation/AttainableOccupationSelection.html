@@ -1,0 +1,61 @@
+{% extends "global/Page.html" %}
+{% block content %}
+<div class="container">
+    <form method="post">
+        <p style="font-size: 18px;">Please pick the closest match from the following list of options. <br><br>If you don't see a good match choose <em>{{ custom_text1 }}</em> {{ custom_text }}</p>
+        <p style="font-size: 18px;"><strong>Select the occupation that is most approximate to your response</strong></p>
+        {% for job_title in job_options %}
+            <label class="radio-option">
+                <input type="radio" name="selected_attainable_job" value="{{ job_title }}"> {{ job_title }}
+            </label>
+        {% endfor %}
+        {{ formfield_errors 'selected_attainable_job' }}
+        <button type="submit" class="btn btn-primary">Next</button>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block style %}
+<style>
+    
+    html, body {
+        height: 100vh; /* Ensure full height */
+        margin: 0; /* Remove default margin */
+        }
+    
+   /* .container {
+        display: flex;
+        flex-direction: column; /* Align children vertically */
+        justify-content: center; /* Vertically center content */
+        align-items: center; /* Horizontally center content 
+        height: 100%;
+        text-align: left;
+    }*/
+    
+    .container {
+        justify-content: center; /* Vertically center content */
+        align-items: center; /* Horizontally center content */
+        min-height: 100%;
+        text-align: left;
+    }
+    
+    .container .btn-primary {
+        margin-top: 20px; /* Adjust the value to your preference */
+        width: auto; 
+        align-self: flex-start;
+    }
+    
+    .container > * { /* Target all direct children of .container */
+        width: 100%; /* Make children take up full width */
+        text-align: left; /* Align text to the left within each child */
+    }
+    
+    label.radio-option {
+        display: block; /* Each label on a new line */
+        margin-top: 5px;
+        margin-bottom: 5px; /* Adjust the vertical spacing */
+        font-size: 18px;
+    }
+</style>
+{% endblock %}

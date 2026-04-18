@@ -1,0 +1,56 @@
+{% block content %}
+
+  <p style="font-size: 18px;">
+    You will be shown a series of images in quick succession.
+</p>
+<p style="font-size: 18px;">
+    If the image is green, press the (<strong>&#8594;</strong>) right arrow key.
+    If the image is red, don't press anything. Instead, wait for the next image.
+  </p>
+
+  <p style="font-size: 18px;">When you are ready to start, press the button below.</p>
+  <button class="btn btn-primary">Start</button>
+{% endblock %}
+
+{% block style %}
+<style>
+    
+    html, body {
+        height: 100vh; /* Ensure full height */
+        margin: 0; /* Remove default margin */
+        }
+    
+    .container {
+        /*display: flex;
+        flex-direction: column; /* Align children vertically */
+        justify-content: center; /* Vertically center content */
+        align-items: center; /* Horizontally center content */
+        min-height: 100%;
+        text-align: left;
+        font-size: 18px;
+    }
+    
+    .container .btn-primary {
+        margin-top: 20px; /* Adjust the value to your preference */
+        width: auto; 
+        align-self: flex-start;
+    }
+    
+    .container > * { /* Target all direct children of .container */
+        width: 100%; /* Make children take up full width */
+        text-align: left; /* Align text to the left within each child */
+    }
+    
+    .custom-textbox {
+    width: 300px; /* Adjust the width as needed */
+    height: 40px; /* Adjust the height as needed */
+    font-size: 16px; /* Adjust the font size as needed */
+}
+    
+    .form-control-textarea {
+        height: 6em; /* Adjust based on your font size and line height */
+        width: 50%;
+        /* Additional styling if needed */
+    }
+</style>
+{% endblock %}

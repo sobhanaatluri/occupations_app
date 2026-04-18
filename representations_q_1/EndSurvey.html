@@ -1,0 +1,40 @@
+{% extends "global/Page.html" %}
+{% block content %}
+<div class="container">
+    <p style="font-size: 18px;">Thank you for participating in the survey.</p>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    html, body {
+        height: 100vh; /* Ensure full height */
+        margin: 0; /* Remove default margin */
+        }
+    
+    .container {
+        /*display: flex;
+        flex-direction: column; /* Align children vertically */
+        justify-content: center; /* Vertically center content */
+        align-items: center; /* Horizontally center content */
+        height: 100%;
+        text-align: left;
+    }
+    
+    .container > * { /* Target all direct children of .container */
+        width: 100%; /* Make children take up full width */
+        text-align: left; /* Align text to the left within each child */
+    }
+    
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+    let completionlink = js_vars.completionlink;
+
+    window.onload = function(){
+        window.location.href=completionlink;
+    }
+</script>
+{% endblock %}

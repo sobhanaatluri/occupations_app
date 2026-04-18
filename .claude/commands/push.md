@@ -1,0 +1,1 @@
+Stage all changes, commit with a short descriptive message summarizing what changed, and push to the current branch on origin. Use `git status` and `git diff` to understand what changed before writing the commit message. Do not ask for confirmation — just do it.

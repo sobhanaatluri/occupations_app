@@ -1,0 +1,223 @@
+{% extends "global/Page.html" %}
+{% block content %}
+<div class="container">
+    <form id="transitionForm" method="post">
+        <div id="question1" class="question">
+            <p>{{ form.transition_consideration.label }}</p>
+            
+            <div class="radio-options">
+                <div class="radio-option">
+                    <input type="radio" name="transition_consideration" id="id_transition_consideration_0" value="Changing careers">
+                    <label for="id_transition_consideration_0">Changing careers</label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" name="transition_consideration" id="id_transition_consideration_1" value="Changing jobs within the same domain">
+                    <label for="id_transition_consideration_1">Changing jobs within the same domain</label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" name="transition_consideration" id="id_transition_consideration_2" value="Neither">
+                    <label for="id_transition_consideration_2">Neither</label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" name="transition_consideration" id="id_transition_consideration_3" value="Other">
+                    <label for="id_transition_consideration_3">Other</label>
+                </div>
+            </div>
+            
+            <!-- Text input for "Other" option -->
+            <div id="other_text_container" style="display: none; margin-top: 10px;">
+                <p style="color: red; margin-left: 23px; margin-bottom: 10px;">Please specify your response.</p>
+                <input type="text" name="transition_other" id="id_transition_other" style="margin-left: 23px; width: 400px; padding: 5px;">
+            </div>
+            
+            <span class="error-message" style="color: red; display: none;"></span>
+            <button type="button" onclick="showNextQuestion(1)" class="btn btn-primary">Next</button>
+        </div>
+        
+        <div id="question2" class="question" style="display: none;">
+            <p>{{ form.transition_timeframe.label }}</p>
+            <div class="radio-options">
+                <div class="radio-option">
+                    <input type="radio" name="transition_timeframe" id="id_transition_timeframe_0" value="Not thinking about it">
+                    <label for="id_transition_timeframe_0">Not thinking about it</label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" name="transition_timeframe" id="id_transition_timeframe_1" value="Last 6 months">
+                    <label for="id_transition_timeframe_1">Last 6 months</label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" name="transition_timeframe" id="id_transition_timeframe_2" value="Last 12 months">
+                    <label for="id_transition_timeframe_2">Last 12 months</label>
+                </div>
+                <div class="radio-option">
+                    <input type="radio" name="transition_timeframe" id="id_transition_timeframe_3" value="More than a year">
+                    <label for="id_transition_timeframe_3">More than a year</label>
+                </div>
+            </div>
+            <span class="error-message" style="color: red; display: none;"></span>
+            <button type="submit" class="btn btn-primary">Next</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    html, body {
+        height: 100vh;
+        margin: 0;
+    }
+    
+    .container {
+        justify-content: center;
+        align-items: center;
+        min-height: 100%;
+        text-align: left;
+        font-size: 18px;
+        padding: 20px;
+    }
+    
+    /* Style for radio buttons */
+    .radio-options {
+        margin-bottom: 15px;
+    }
+    
+    .radio-option {
+        margin-bottom: 10px;
+    }
+    
+    .radio-option input[type="radio"] {
+        margin-right: 10px;
+    }
+    
+    /* Style for the next button - using the previous styling */
+    .container .btn-primary {
+        margin-top: 20px; 
+        width: auto; 
+        align-self: flex-start;
+    }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM fully loaded");
+    
+    // Add event listeners to radio buttons
+    var radioButtons = document.querySelectorAll('input[name="transition_consideration"]');
+    console.log("Found " + radioButtons.length + " radio buttons");
+    
+    for (var i = 0; i < radioButtons.length; i++) {
+        radioButtons[i].addEventListener('click', function() {
+            console.log("Radio button clicked: " + this.value);
+            toggleOtherTextbox(this.value === 'Other');
+        });
+    }
+    
+    // Check if "Other" is already selected
+    for (var i = 0; i < radioButtons.length; i++) {
+        if (radioButtons[i].checked && radioButtons[i].value === 'Other') {
+            console.log("Other was already checked");
+            toggleOtherTextbox(true);
+            break;
+        }
+    }
+    
+    // Form validation on submit
+    document.getElementById('transitionForm').addEventListener('submit', validateForm);
+});
+
+function toggleOtherTextbox(show) {
+    console.log("Toggle other textbox: " + show);
+    var otherTextContainer = document.getElementById('other_text_container');
+    otherTextContainer.style.display = show ? 'block' : 'none';
+    
+    if (show) {
+        document.getElementById('id_transition_other').focus();
+    } else {
+        document.getElementById('id_transition_other').value = '';
+    }
+}
+
+function showNextQuestion(currentQuestionNumber) {
+    var currentQuestionId = "question" + currentQuestionNumber;
+    var currentQuestion = document.getElementById(currentQuestionId);
+    var errorMessage = currentQuestion.querySelector(".error-message");
+    
+    // Clear any previous error message
+    errorMessage.style.display = "none";
+    
+    // Validate current question
+    var isValid = validateQuestion(currentQuestionNumber);
+    
+    if (!isValid) {
+        errorMessage.style.display = "block";
+        return;
+    }
+    
+    // Hide current question, show next question
+    currentQuestion.style.display = "none";
+    var nextQuestionNumber = currentQuestionNumber + 1;
+    var nextQuestionId = "question" + nextQuestionNumber;
+    var nextQuestion = document.getElementById(nextQuestionId);
+    
+    if (nextQuestion) {
+        nextQuestion.style.display = "block";
+    }
+}
+
+function validateQuestion(questionNumber) {
+    if (questionNumber === 1) {
+        // Check if any radio button is selected
+        var radioButtons = document.querySelectorAll('input[name="transition_consideration"]');
+        var isSelected = false;
+        var isOtherSelected = false;
+        
+        for (var i = 0; i < radioButtons.length; i++) {
+            if (radioButtons[i].checked) {
+                isSelected = true;
+                if (radioButtons[i].value === 'Other') {
+                    isOtherSelected = true;
+                }
+                break;
+            }
+        }
+        
+        if (!isSelected) {
+            document.querySelector("#question1 .error-message").textContent = "Please select an option.";
+            return false;
+        }
+        
+        // If "Other" is selected, ensure the text field is not empty
+        if (isOtherSelected) {
+            var otherText = document.getElementById('id_transition_other').value.trim();
+            if (!otherText) {
+                document.querySelector("#question1 .error-message").textContent = "Please specify your response.";
+                return false;
+            }
+        }
+    }
+    
+    return true;
+}
+
+function validateForm(event) {
+    // Validate question 2
+    var radioButtons = document.querySelectorAll('input[name="transition_timeframe"]');
+    var isSelected = false;
+    
+    for (var i = 0; i < radioButtons.length; i++) {
+        if (radioButtons[i].checked) {
+            isSelected = true;
+            break;
+        }
+    }
+    
+    if (!isSelected) {
+        document.querySelector("#question2 .error-message").textContent = "Please select an option.";
+        event.preventDefault(); // Prevent form submission
+    }
+}
+</script>
+{% endblock %}

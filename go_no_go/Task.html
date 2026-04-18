@@ -1,0 +1,152 @@
+{% block content %}
+<div class="container">
+  {{ for path in image_paths }}
+      <img class="img-stimulus" src="{{ static path }}" style="display: none">
+  {{ endfor }}
+
+  <div id="feedback" style="font-size: 100px"></div>
+  <div id="loading">Get ready...</div>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    
+    html, body {
+        height: 100vh; /* Ensure full height */
+        margin: 0; /* Remove default margin */
+        /*display: flex; /* Enable flexbox */
+        justify-content: center; /* Center content horizontally */
+        align-items: center; /* Center content vertically */
+        }
+    
+    .container {
+        /*display: flex; /* Enable flexbox */
+        /*flex-direction: column; /* Stack child elements vertically */
+        justify-content: center; /* Center child elements vertically */
+        align-items: center; /* Center child elements horizontally */
+        width: 100%; /* Match the full width of the viewport */
+        height: 100%; /* Match the full height of the viewport */
+        box-sizing: border-box; /* Prevent unintended overflow */
+    }
+
+    .img-stimulus {
+        display: none; /* Hide images initially */
+        max-width: 25%; /* Ensure the image fits within the container */
+        max-height: 25%; /* Ensure the image fits within the container */
+        object-fit: contain; /* Preserve the original aspect ratio */
+        position: absolute; /* Overlay feedback on the page */
+        top: 50%; /* Center vertically */
+        left: 50%; /* Center horizontally */
+        transform: translate(-50%, -50%); /* Adjust for element's own size */
+        z-index: 10; /* Ensure it appears above other content */
+    }
+    
+    #feedback {
+        font-size: 100px; /* Font size for feedback */
+        text-align: center;
+        position: absolute; /* Overlay feedback on the page */
+        top: 50%; /* Center vertically */
+        left: 50%; /* Center horizontally */
+        transform: translate(-50%, -50%); /* Adjust for element's own size */
+        z-index: 10; /* Ensure it appears above other content */
+    }
+
+    #loading {
+        font-size: 24px; /* Font size for loading text */
+        text-align: center;
+        position: absolute; /* Overlay loading text on the page */
+        top: 50%; /* Center vertically */
+        left: 50%; /* Center horizontally */
+        transform: translate(-50%, -50%); /* Adjust for element's own size */
+        z-index: 10; /* Ensure it appears above other content */
+    }
+    
+    .container .btn-primary {
+        margin-top: 20px; /* Adjust the value to your preference */
+        width: auto; 
+        align-self: flex-start;
+    }
+    
+    .container > * { /* Target all direct children of .container */
+        width: 100%; /* Make children take up full width */
+        text-align: left; /* Align text to the left within each child */
+    }
+    
+    .custom-textbox {
+    width: 300px; /* Adjust the width as needed */
+    height: 40px; /* Adjust the height as needed */
+    font-size: 16px; /* Adjust the font size as needed */
+}
+    
+    .form-control-textarea {
+        height: 6em; /* Adjust based on your font size and line height */
+        width: 50%;
+        /* Additional styling if needed */
+    }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+      let images = document.getElementsByClassName('img-stimulus');
+      let feedback = document.getElementById('feedback');
+      let displayed_timestamp;
+      let loading = document.getElementById('loading');
+      let image_id_global = null;
+
+      // time before we unhideDiv the first image (give time to get hands ready on keyboard)
+      const INITIAL_DELAY = 2000;
+
+      // time in between showing showing ✓ or ✗, and showing the next image
+      const IN_BETWEEN_DELAY = 2000;
+
+      function liveRecv(data) {
+          for (let image of images) {
+              image.style.display = 'none';
+          }
+          if (data.feedback) {
+            feedback.innerHTML = data.feedback;
+            feedback.style.display = 'block';
+          }
+          if (data.is_finished) {
+              document.getElementById('form').submit();
+          } else {
+            image_id_global = data.image_id;
+            setTimeout(() => loadImage(data.image_id), IN_BETWEEN_DELAY);
+          }
+      }
+
+      function loadImage(image_id) {
+          feedback.style.display = 'none';
+          images[image_id].style.display = 'block';
+          isRefractoryPeriod = false;
+          displayed_timestamp = performance.now();
+          setTimeout(() => {
+            liveSend({'image_id': image_id, 'pressed': false})
+          }, 3000);
+      }
+
+      let isRefractoryPeriod = false;
+
+      document.addEventListener('keydown', function (event) {
+        if (event.keyCode === 39) { // right arrow key
+          if (isRefractoryPeriod) return;
+          isRefractoryPeriod = true;
+          liveSend({
+              'image_id': image_id_global,
+              'pressed': true,
+              'displayed_timestamp': displayed_timestamp,
+              'answered_timestamp': performance.now()
+          })
+        }
+      });
+
+      document.addEventListener('DOMContentLoaded', function (event) {
+          setTimeout(function () {
+              loading.style.display = 'none';
+              liveSend({});
+          }, INITIAL_DELAY);
+      });
+  </script>
+{% endblock %}

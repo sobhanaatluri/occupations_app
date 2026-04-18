@@ -1,0 +1,26 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block content %}
+    <div id="loading-message" style="text-align: center; font-size: 18px;">
+        <p>Please wait while we process your responses...</p>
+        <p>This may take a few seconds.</p>
+    </div>
+
+    <div id="complete-message" style="display: none; text-align: center; font-size: 18px;">
+        <p>{{ message }}</p>
+        <button id="next-button" class="btn btn-primary" disabled>Next</button>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(function() {
+            document.getElementById("loading-message").style.display = "none";
+            document.getElementById("complete-message").style.display = "block";
+            document.getElementById("next-button").disabled = false;
+        }, 3000);  // Simulate a 3-second delay before showing "Next"
+    });
+</script>
+{% endblock %}

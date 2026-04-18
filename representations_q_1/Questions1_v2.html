@@ -1,0 +1,233 @@
+{% extends "global/Page.html" %}
+{% block content %}
+<div class="container">
+
+<form id="questionsForm" method="post">
+    
+    <div id="question1" class="question">
+    <p style="font-size: 18px;">We will ask you a few questions about yourself.</p>
+    <p style="font-size: 18px;">{{ form.educ.label }}</p>
+    {% for option in form.educ.choices %}
+        <label class="radio-option">
+            <input type="radio" name="educ" value="{{ option }}" onchange="toggleOtherInput('educ', 'id_educ_other')"> {{ option }}
+        </label>
+    {% endfor %}
+    <input type="text" name="educ_other" id="id_educ_other" class="form-control" disabled>
+    <span class="error-message" style="color: red; display: none;"></span>
+    <button type="button" onclick="showNextQuestion(1)" style="display: block;" class="btn btn-primary">Next</button>
+        
+    </div>
+    
+    <div id="question2" class="question" style="display: none;">
+        
+        <p>{{ form.age.label }}</p>
+        {{ form.age }}
+        <span class="error-message" style="color: red; display: none;"></span>
+        <button type="button" onclick="showNextQuestion(2)" style="display: block;" class="btn btn-primary">Next</button>
+    </div>
+    
+    <div id="question3" class="question" style="display: none;">
+        
+       <p>{{ form.gender.label }}</p> 
+       {% for option in form.gender.choices %}
+            <label class="radio-option">
+                <input type="radio" name="gender" value="{{ option }}" onchange="toggleOtherInput('gender', 'id_gender_other')"> {{ option }}
+            </label>
+        {% endfor %}
+        <input type="text" name="gender_other" id="id_gender_other" class="form-control" disabled>
+        <span class="error-message" style="color: red; display: none;"></span>
+        <button type="button" onclick="showNextQuestion(3)" style="display: block;" class="btn btn-primary">Next</button>
+    </div>
+    
+    <div id="question4" class="question" style="display: none;">
+        <p>{{ form.race.label }}</p>
+        {% for option in form.race.choices %}
+            <label class="checkbox-option">
+                <input type="checkbox" name="race" value="{{ option }}" onchange="updateChoices()"> {{ option }}
+            </label>
+        {% endfor %}
+        <input type="text" name="race_other" id="id_race_other" class="form-control" disabled>
+        
+        <input type="hidden" name="race_all" id="id_race_choices">
+        <span class="error-message" style="color: red; display: none;"></span>
+        <button type="button" onclick="showNextQuestion(4)" style="display: block;" class="btn btn-primary">Next</button>
+    </div>
+    
+    
+     <div id="question5" class="question" style="display: none;">
+        
+       <p>{{ form.income.label }}</p> 
+       {% for option in form.income.choices %}
+            <label class="radio-option">
+                <input type="radio" name="income" style="display: inline-block;" value="{{ option }}"> {{ option }}
+            </label>
+        {% endfor %}
+        <span class="error-message" style="color: red; display: none;"></span>
+        <button type="button" onclick="showNextQuestion(5)" class="btn btn-primary">Next</button>
+    </div>
+    
+    <div id="question6" class="question" style="display: none;">
+        <p>{{ form.comments.label }}</p>
+    <textarea name="comments" class="form-control form-control-textarea" id="id_comments" required></textarea>
+    <button type="submit" style="display: inline-block;" class="btn btn-primary">Next</button>
+    </div>
+</form>
+    </div>
+{% endblock %}
+
+{% block style %}
+<style>
+    
+    html, body {
+        height: 100vh; /* Ensure full height */
+        margin: 0; /* Remove default margin */
+        }
+    
+    .container {
+        /*display: flex;
+        flex-direction: column; /* Align children vertically */
+        justify-content: center; /* Vertically center content */
+        /*align-items: center; /* Horizontally center content */
+        /*height: 100vh;*/
+        text-align: left;
+        font-size: 18px;
+        min-height: 100%;
+    }
+    
+    .container .btn-primary {
+        margin-top: 20px; /* Adjust the value to your preference */
+        width: auto; 
+        align-self: flex-start;
+    }
+    
+    .container > * { /* Target all direct children of .container */
+        width: 100%; /* Make children take up full width */
+        text-align: left; /* Align text to the left within each child */
+    }
+    
+    .custom-textbox {
+    width: 300px; /* Adjust the width as needed */
+    height: 20%; /* Adjust the height as needed */
+    font-size: 16px; /* Adjust the font size as needed */
+}
+    
+    label.radio-option {
+        display: block; /* Each label on a new line */
+        margin-top: 5px;
+        margin-bottom: 5px; /* Adjust the vertical spacing */
+        font-size: 18px;
+    }
+    
+    label.checkbox-option {
+        display: block; /* Each label on a new line */
+        margin-top: 5px;
+        margin-bottom: 5px; /* Adjust the vertical spacing */
+        font-size: 18px;
+    }
+    
+    .form-control-custom {
+        height: 50px; /* Specify your desired height */
+    }
+    
+    .form-control-textarea {
+        height: 6em; /* Adjust based on your font size and line height */
+        width: 50%;
+        /* Additional styling if needed */
+    }
+    
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+    
+function showNextQuestion(currentQuestionNumber) {
+    var currentQuestionId = "question" + currentQuestionNumber;
+    var currentQuestion = document.getElementById(currentQuestionId);
+    var errorMessageSpan = currentQuestion.querySelector(".error-message");
+
+    // Clear any previous error message
+    errorMessageSpan.style.display = "none";
+    errorMessageSpan.textContent = "";
+
+    // Perform validation based on question type
+    var isValid = true;  // Assume input is valid initially
+
+    // Question-specific validation
+    if (currentQuestionNumber === 1) {
+        var selectedEduc = document.querySelector('input[name="educ"]:checked');
+        isValid = !!selectedEduc;
+        if (selectedEduc && selectedEduc.value === "Other") {
+            var otherInput = document.getElementById('id_educ_other');
+            isValid = otherInput.value.trim() !== "";
+        }
+    } else if (currentQuestionNumber === 2) {
+        // Assuming the age input field is rendered with the name 'age'
+        var ageInput = document.querySelector('input[name="age"]');
+        isValid = ageInput && ageInput.value.trim() !== "" && !isNaN(ageInput.value) && ageInput.value > 16;
+    } else if (currentQuestionNumber === 3) {
+        var selectedGender = document.querySelector('input[name="gender"]:checked');
+        isValid = !!selectedGender;
+        if (selectedGender && selectedGender.value === "Other") {
+            var otherGenderInput = document.getElementById('id_gender_other');
+            isValid = otherGenderInput.value.trim() !== "";
+        }
+    } else if (currentQuestionNumber === 4) {
+        var selectedRace = document.querySelectorAll('input[name="race"]:checked').length > 0;
+        isValid = selectedRace;
+        var otherRaceCheckbox = document.querySelector('input[name="race"][value="Other"]');
+        if (otherRaceCheckbox && otherRaceCheckbox.checked) {
+            var otherRaceInput = document.getElementById('id_race_other');
+            isValid = otherRaceInput.value.trim() !== "";
+        }
+    } else if (currentQuestionNumber === 5) {
+        var selectedEduc = document.querySelector('input[name="income"]:checked');
+        isValid = !!selectedEduc;
+    }
+    if (!isValid) {
+        // Display the error message
+        errorMessageSpan.textContent = "Please complete the current question before moving to the next. Enter/choose a valid value.";
+        errorMessageSpan.style.display = "block";
+        return;
+    }
+
+    // Hide current question
+    currentQuestion.style.display = "none";
+
+    // Show next question or the submit button
+    var nextQuestionId = "question" + (currentQuestionNumber + 1);
+    var nextQuestion = document.getElementById(nextQuestionId);
+    if (nextQuestion) {
+        nextQuestion.style.display = "block";
+    } else {
+        document.querySelector("#questionsForm button[type='submit']").style.display = "inline-block";
+    }
+}
+    
+
+function toggleOtherInput(radioName, otherInputId) {
+    var selectedOption = document.querySelector('input[name="' + radioName + '"]:checked');
+    var otherInput = document.getElementById(otherInputId);
+    otherInput.disabled = !(selectedOption && selectedOption.value === "Other");
+}
+    
+function updateChoices() {
+    const checkboxes = document.querySelectorAll('input[name="race"]:checked');
+    let choices = Array.from(checkboxes).map(cb => cb.value);
+
+    // Include the "Other" input value if "Other" is checked
+    const otherCheckbox = document.querySelector('input[name="race"][value="Other"]');
+    const otherInput = document.getElementById('id_race_other');
+    if (otherCheckbox && otherCheckbox.checked) {
+        otherInput.disabled = false;
+        choices.push(otherInput.value);
+    }
+
+    // Update the hidden input with concatenated choices
+    const hiddenInput = document.getElementById('id_race_choices');
+    hiddenInput.value = choices.join(', ');  // Join the choices with a comma or any delimiter you prefer
+}
+
+</script>
+
+{% endblock %}

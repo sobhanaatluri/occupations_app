@@ -1,0 +1,72 @@
+{% extends "global/Page.html" %}
+{% block content %}
+<div class="container">
+    <form id="hopesConcernsForm" method="post">
+        <div class="question">
+            <p>{{ form.transition_hopes_concerns.label }}</p>
+            <textarea name="transition_hopes_concerns" class="form-control form-control-textarea" id="id_transition_hopes_concerns" required rows="8"></textarea>
+            <span class="error-message" style="color: red; display: none;"></span>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    html, body {
+        height: 100vh;
+        margin: 0;
+    }
+    
+    .container {
+        justify-content: center;
+        align-items: center;
+        min-height: 100%;
+        text-align: left;
+        font-size: 18px;
+        padding: 20px;
+    }
+    
+    .container .btn-primary {
+        margin-top: 20px;
+        width: auto;
+        align-self: flex-start;
+    }
+    
+    .container > * {
+        width: 100%;
+        text-align: left;
+    }
+    
+    .form-control-textarea {
+        height: 200px;
+        width: 100%;
+        font-size: 16px;
+        padding: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+    document.getElementById("hopesConcernsForm").addEventListener("submit", validateForm);
+});
+
+function validateForm(event) {
+    var textareaInput = document.getElementById("id_transition_hopes_concerns");
+    var errorMessage = document.querySelector(".error-message");
+    
+    // Clear any previous error message
+    errorMessage.style.display = "none";
+    
+    if (!textareaInput.value.trim()) {
+        // If the textarea is empty, show error
+        errorMessage.textContent = "Please list your hopes and concerns about the job move.";
+        errorMessage.style.display = "block";
+        event.preventDefault(); // Prevent form submission
+    }
+}
+</script>
+{% endblock %}

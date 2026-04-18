@@ -1,0 +1,494 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block title %}Rank Your Values{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-color: rgb(240, 238, 238);
+    }
+
+    .otree-title {
+        display: none;
+    }
+
+    .otree-body {
+        max-width: 90vw;
+        min-height: 100%;
+        background-color: rgb(240, 238, 238);
+    }
+
+    .ranking-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 40px;
+        margin-left: 40px;
+    }
+
+    .instructions {
+        width: 15%;
+        text-align: left;
+        margin-top: -100px;
+    }
+
+    .ranking-bin-container {
+        width: 75%;
+        position: relative;
+    }
+
+    .ranking-bin {
+        display: flex;
+        align-items: flex-start;
+        width: 80%;
+    }
+
+    .rank-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        min-height: 450px;
+    }
+
+    .vertical-text {
+        writing-mode: vertical-lr;
+        transform: rotate(180deg);
+        font-size: 2.5em;
+        vertical-align: middle;
+        margin-left: 2em;
+        margin-right: .5em;
+    }
+
+    .rank-item {
+        display: flex;
+        align-items: center;
+        justify-content: left;
+        width: 80%;
+        height: 60px;
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+        background-color: white;
+        padding: 0;
+        border-radius: 12px;
+        position: relative;
+    }
+
+    .rank-item:empty {
+        border: 2px dashed #ccc;
+        min-height: 60px;
+        border-radius: 12px;
+    }
+
+    .drag-container {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        width: 60%;
+        max-width: 650px;
+        min-height: 200px; /* Ensures the container doesn't shrink */
+        margin: 50px auto 0 auto;
+    }
+    
+    /* Added wrapper for drag container and submit button */
+    .top-section-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .drag-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: white;
+        border: 1px solid #ccc;
+        text-align: center;
+        height: 60px;
+        width: 25%;
+        position: relative;
+        border-radius: 12px;
+        cursor: default;
+        transition: background-color 0.3s ease;
+    }
+
+    .drag-item:hover {
+        background-color: #e0e0e0;
+    }
+
+    .drag-over {
+        border: 2px dashed #000;
+    }
+
+    /* Ensures the rank list does not shrink */
+    .rank-column {
+        min-height: 450px;
+    }
+
+    /* Tooltip Styling */
+    .tooltip {
+        display: none;
+        position: absolute;
+        bottom: 120%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 14px;
+        white-space: nowrap;
+        z-index: 100;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+    }
+
+    .drag-item:not(.dragging):hover .tooltip {
+        display: block;
+        opacity: 1;
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    /* Updated Submit button positioning */
+    #submit-container {
+        position: absolute;
+        top: 0;
+        right: -150px; /* Position it to the right of the drag container */
+        z-index: 10;
+    }
+</style>
+
+<div class="top-section-wrapper">
+    <div id="drag-container" class="drag-container" ondrop="handleUnrankDrop(event)" ondragover="allowDrop(event)">
+    </div>
+    <!-- Moved submit button outside the drag container but still in the wrapper -->
+    <div id="submit-container">
+        <button type="submit" class="btn btn-primary" id="submit-button" disabled>Submit Ranking</button>
+    </div>
+</div>
+
+<div class="ranking-container">
+    <div class="instructions">
+        <p style="font-size: 18px;">
+            Please rank the <strong>values</strong> by dragging them to the ranking area.<br><br>
+            Place the values <strong>most important</strong> to you in your occupation at the <strong>top</strong>, followed by less important ones.
+        </p>
+    </div>
+    
+    <div class="ranking-bin-container">
+        <div class="flex-container">
+            <div class="ranking-bin">
+                <div class="vertical-text">Rankings</div>
+                <div class="rank-column">
+                    {% for i in range(6) %}
+                        <div class="rank-item" id="rank-{{ forloop.counter0 }}" draggable="false" ondrop="handleRankDrop(event)" ondragover="allowDrop(event)">
+                            <div class="rank-number">#{{ forloop.counter }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="post" id="values-form">
+    <input type="hidden" name="values_order" value="">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const values = {{ values|safe }};
+    const valuesDescriptions = {{ values_descriptions|safe }};
+    const dragContainer = document.getElementById('drag-container');
+
+    function createDraggable(index, name, description) {
+        const dI = document.createElement('div');
+        dI.classList.add('drag-item');
+        dI.setAttribute('draggable', true);
+        dI.id = `value_${index}`;
+        dI.dataset.valueName = name; // Store just the name for saving later
+
+        const div = document.createElement('div');
+        div.textContent = name;
+
+        const tooltip = document.createElement('div');
+        tooltip.classList.add('tooltip');
+        tooltip.textContent = description;
+
+        dI.appendChild(div);
+        dI.appendChild(tooltip);
+
+        attachDragEventListeners(dI);
+        return dI;
+    }
+
+    function renderDragDrop() {
+        values.forEach((value, index) => {
+            const dragItem = createDraggable(index, value, valuesDescriptions[value]);
+            dragContainer.appendChild(dragItem);
+        });
+    }
+
+    function attachDragEventListeners(item) {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragend', handleDragEnd);
+    }
+
+    function handleDragStart(e) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData("text/plain", this.id);
+        e.target.classList.add('dragging');
+    }
+
+    function handleDragEnd(e) {
+        e.target.classList.remove('dragging');
+    }
+
+    function allowDrop(e) {
+        e.preventDefault();
+    }
+
+    function handleRankDrop(e) {
+        e.preventDefault();
+        const dropTarget = e.currentTarget;
+        const draggedItemId = e.dataTransfer.getData("text/plain");
+        const draggedItem = document.getElementById(draggedItemId);
+        
+        if (!draggedItem) return;
+        
+        // Get the current rank position
+        const rankPosition = parseInt(dropTarget.id.split('-')[1]);
+        
+        // Save the rank number element
+        const rankNumber = dropTarget.querySelector('.rank-number');
+        
+        // Check if the drop target already has a value
+        const existingValue = dropTarget.querySelector('.drag-item');
+        
+        // First, determine where the dragged item is coming from
+        let sourceRankPosition = -1; // -1 means it's coming from the drag container
+        if (draggedItem.parentNode && draggedItem.parentNode.classList.contains('rank-item')) {
+            sourceRankPosition = parseInt(draggedItem.parentNode.id.split('-')[1]);
+        }
+        
+        // If there's an existing value in the drop target
+        if (existingValue) {
+            // If we're dragging from a rank that's below the drop target
+            if (sourceRankPosition > rankPosition) {
+                // We'll implement the swapping logic here
+                
+                // First, remove the dragged item from its current position
+                if (draggedItem.parentNode) {
+                    draggedItem.parentNode.removeChild(draggedItem);
+                }
+                
+                // Save the existing value in the drop target
+                const shiftedValue = existingValue;
+                
+                // Clear the drop target but preserve the rank number
+                dropTarget.innerHTML = '';
+                if (rankNumber) {
+                    dropTarget.appendChild(rankNumber);
+                }
+                
+                // Place the dragged item in the drop target
+                draggedItem.classList.add('ranked-item');
+                draggedItem.style.width = '100%';
+                draggedItem.style.height = '60px';
+                dropTarget.appendChild(draggedItem);
+                
+                // Now, shift items one by one from the drop target position down
+                let currentRankIndex = rankPosition + 1;
+                let valueToMove = shiftedValue;
+                
+                while (currentRankIndex < 6 && valueToMove) {
+                    const currentRank = document.getElementById(`rank-${currentRankIndex}`);
+                    const currentRankNumber = currentRank.querySelector('.rank-number');
+                    const nextValue = currentRank.querySelector('.drag-item');
+                    
+                    // Clear the current rank but preserve its number
+                    currentRank.innerHTML = '';
+                    if (currentRankNumber) {
+                        currentRank.appendChild(currentRankNumber);
+                    }
+                    
+                    // Add the value to be moved to this rank
+                    valueToMove.classList.add('ranked-item');
+                    valueToMove.style.width = '100%';
+                    valueToMove.style.height = '60px';
+                    currentRank.appendChild(valueToMove);
+                    
+                    // Update the value to move for the next iteration
+                    valueToMove = nextValue;
+                    currentRankIndex++;
+                }
+                
+                // If we've run out of rank slots, return the last item to the container
+                if (valueToMove) {
+                    valueToMove.classList.remove('ranked-item');
+                    valueToMove.style.width = '25%';
+                    valueToMove.style.height = '60px';
+                    dragContainer.appendChild(valueToMove);
+                }
+            } 
+            // If we're dragging from a rank position above the drop target or from the container
+            else {
+                // Use the original cascading behavior for this case
+                
+                // Get all values that need to be shifted down
+                const valuesToShift = [];
+                for (let i = rankPosition; i < 6; i++) {
+                    const rankSlot = document.getElementById(`rank-${i}`);
+                    const valueInRank = rankSlot.querySelector('.drag-item');
+                    if (valueInRank) {
+                        valuesToShift.push(valueInRank);
+                    }
+                }
+                
+                // Remove all values from their ranks
+                valuesToShift.forEach(value => {
+                    if (value.parentNode) {
+                        value.parentNode.removeChild(value);
+                    }
+                });
+                
+                // Clear the drop target but preserve the rank number
+                dropTarget.innerHTML = '';
+                if (rankNumber) {
+                    dropTarget.appendChild(rankNumber);
+                }
+                
+                // Place the new dragged item in this rank
+                draggedItem.classList.add('ranked-item');
+                draggedItem.style.width = '100%';
+                draggedItem.style.height = '60px';
+                dropTarget.appendChild(draggedItem);
+                
+                // Shift the other values down
+                for (let i = 0; i < valuesToShift.length; i++) {
+                    const value = valuesToShift[i];
+                    const targetRankIndex = rankPosition + i + 1;
+                    
+                    // If we still have rank slots available
+                    if (targetRankIndex < 6) {
+                        const targetRank = document.getElementById(`rank-${targetRankIndex}`);
+                        
+                        // Save the target rank number
+                        const targetRankNumber = targetRank.querySelector('.rank-number');
+                        
+                        // Clear the target rank
+                        targetRank.innerHTML = '';
+                        
+                        // Add back the rank number
+                        if (targetRankNumber) {
+                            targetRank.appendChild(targetRankNumber);
+                        }
+                        
+                        // Add the shifted value
+                        value.classList.add('ranked-item');
+                        value.style.width = '100%';
+                        value.style.height = '60px';
+                        targetRank.appendChild(value);
+                    } 
+                    // If we've run out of rank slots, return the item to the container
+                    else {
+                        value.classList.remove('ranked-item');
+                        value.style.width = '25%';
+                        value.style.height = '60px';
+                        dragContainer.appendChild(value);
+                    }
+                }
+            }
+        } 
+        else {
+            // If the slot is empty, just add the item
+            // Clear the drop target but preserve the rank number
+            dropTarget.innerHTML = '';
+            if (rankNumber) {
+                dropTarget.appendChild(rankNumber);
+            }
+            
+            // Remove the dragged item from its current position
+            if (draggedItem.parentNode) {
+                draggedItem.parentNode.removeChild(draggedItem);
+            }
+            
+            draggedItem.classList.add('ranked-item');
+            draggedItem.style.width = '100%';
+            draggedItem.style.height = '60px';
+            dropTarget.appendChild(draggedItem);
+        }
+        
+        rankingUpdate();
+    }
+
+    function handleUnrankDrop(e) {
+        e.preventDefault();
+        const draggedItemId = e.dataTransfer.getData("text/plain");
+        const draggedItem = document.getElementById(draggedItemId);
+        
+        if (!draggedItem) return;
+        
+        // Only handle if it's coming from a rank item
+        if (draggedItem.parentNode && draggedItem.parentNode.classList.contains('rank-item')) {
+            // Preserve the rank number
+            const rankItem = draggedItem.parentNode;
+            const rankNumber = rankItem.querySelector('.rank-number');
+            
+            // Remove the drag item
+            rankItem.removeChild(draggedItem);
+            
+            // Reset its appearance to original
+            draggedItem.classList.remove('ranked-item');
+            draggedItem.style.width = '25%';
+            draggedItem.style.height = '60px';
+            
+            // Reset the rank item but keep the number
+            rankItem.innerHTML = '';
+            if (rankNumber) {
+                rankItem.appendChild(rankNumber);
+            }
+            
+            // Move back to container
+            dragContainer.appendChild(draggedItem);
+            
+            rankingUpdate();
+        }
+    }
+
+    function rankingUpdate() {
+        let orderedValues = [];
+        let rankers = document.getElementsByClassName("rank-item");
+        let count_ranked = 0;
+
+        for (let i = 0; i < rankers.length; i++) {
+            let rankedItem = rankers[i].querySelector(".drag-item");
+            if (rankedItem) {
+                // Use the data attribute to get just the value name
+                orderedValues.push(rankedItem.dataset.valueName);
+                count_ranked++;
+            }
+        }
+
+        document.querySelector("input[name='values_order']").value = orderedValues.join(",");
+        document.getElementById("submit-button").disabled = count_ranked !== rankers.length;
+    }
+
+    // Connect the submit button to the form
+    document.getElementById('submit-button').addEventListener('click', function() {
+        document.getElementById('values-form').submit();
+    });
+
+    renderDragDrop();
+</script>
+{% endblock %}

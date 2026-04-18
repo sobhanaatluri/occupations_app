@@ -1,0 +1,42 @@
+{% extends "global/Page.html" %}
+{% block content %}
+<div class="container">
+    <p style="font-size: 18px;">Imagine you are mentoring a colleague who is considering changing occupations from the role of <em><strong>{{ focal_job }}</strong></em> and the colleague approaches you for advice. </p>
+    <p style="font-size: 18px;">We will show you pairs of occupations and for each pair, you will be asked to give your opinion on which occupation is a <strong>closer match</strong> <em>to the position currently held by the colleague</em>.</p>
+    <p style="font-size: 18px;">For every pair shown, use the left arrow key (<strong>&#8592;</strong>) to select the choice on the left and the right arrow key (<strong>&#8594;</strong>) to select the choice on the right.</p>
+    
+    <form method="post">
+        <button type="submit" class="btn btn-primary">Next</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block style %}
+<style>
+    html, body {
+        height: 100%; /* Ensure full height */
+        margin: 0; /* Remove default margin */
+        }
+    
+    .container {
+        /*display: flex;
+        flex-direction: column; /* Align children vertically */
+        justify-content: center; /* Vertically center content */
+        align-items: center; /* Horizontally center content */
+        min-height: 100%;
+        text-align: left;
+    }
+    
+    .container .btn-primary {
+        margin-top: 20px; /* Adjust the value to your preference */
+        width: auto; 
+        align-self: flex-start;
+    }
+    
+    .container > * { /* Target all direct children of .container */
+        width: 100%; /* Make children take up full width */
+        text-align: left; /* Align text to the left within each child */
+    }
+    
+</style>
+{% endblock %}

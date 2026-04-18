@@ -1,0 +1,292 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block content %}
+<style>
+    body {
+        background-color: rgb(240, 238, 238);
+        overflow: hidden;
+        height: 100vh;
+    }
+    .otree-title { display: none; }
+    .otree-body {
+        max-width: 90vw;
+        min-height: 100%;
+        background-color: rgb(240, 238, 238);
+    }
+    .top-nav {
+        display: flex;
+        justify-content: flex-end;
+        width: 90%;
+        margin: 20px auto 0;
+    }
+    #submit-button { margin-right: 20px; }
+    .ranking-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+    }
+    .instructions {
+        width: 20%;
+        text-align: left;
+        margin-top: -80px;
+    }
+    .ranking-bin-container { width: 75%; }
+    .ranking-bin {
+        display: flex;
+        align-items: flex-start;
+        width: 80%;
+    }
+    .rank-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 550px;
+        margin-bottom: -20px;
+    }
+    .vertical-text {
+        writing-mode: vertical-lr;
+        transform: rotate(180deg);
+        font-size: 2.5em;
+        margin-left: 2em;
+        margin-right: .5em;
+    }
+    .rank-item {
+        display: flex;
+        align-items: center;
+        width: 80%;
+        height: 50px;
+        border: 1px solid #ccc;
+        margin-bottom: 5px;
+        background-color: white;
+        border-radius: 12px;
+        position: relative;
+        justify-content: left;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    .rank-number { padding-left: 10px; font-weight: bold; }
+    .rank-item:empty {
+        border: 2px dashed #ccc;
+        min-height: 50px;
+        border-radius: 12px;
+    }
+    .drag-container {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        row-gap: 5px;
+        width: 90%;
+        max-width: 90%;
+        min-height: 150px;
+        margin: 10px auto 0 auto;
+    }
+    .drag-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: white;
+        border: 1px solid #ccc;
+        text-align: center;
+        height: 75px;
+        font-size: 14px;
+        width: 18%;
+        position: relative;
+        border-radius: 12px;
+        cursor: default;
+        transition: background-color 0.3s ease;
+        padding: 5px;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+    .drag-item.ranked-item {
+        width: 100%;
+        height: 50px;
+        justify-content: left;
+        padding-left: 40px;
+    }
+    .drag-item:hover:not(.dragging) { background-color: #e0e0e0; }
+    .dragging {
+        opacity: 0.8;
+        background-color: #f0f0f0;
+    }
+    .drag-over { border: 2px dashed #000; }
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>
+
+<div class="top-nav">
+    <button type="submit" class="btn btn-primary" id="submit-button" disabled>Submit Ranking</button>
+</div>
+
+<div id="drag-container" class="drag-container" ondrop="handleUnrankDrop(event)" ondragover="allowDrop(event)"></div>
+
+<div class="ranking-container">
+    <div class="instructions">
+        <p style="font-size: 18px;">
+            Please rank the occupations by dragging them to the ranking area.<br><br>
+            Rank them by how closely they match with your colleague's current role, <strong style="color: #0d6efd;">{{ focal_job }}</strong>.<br><br>
+            The occupation at the top should be the most closely matched.
+        </p>
+    </div>
+    <div class="ranking-bin-container">
+        <div class="flex-container">
+            <div class="ranking-bin">
+                <div class="vertical-text">Rankings</div>
+                <div class="rank-column">
+                    {% for i in range(9) %}
+                        <div class="rank-item" id="rank-{{ forloop.counter0 }}" ondrop="handleRankDrop(event)" ondragover="allowDrop(event)">
+                            <div class="rank-number">#{{ forloop.counter }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="post" id="occupation-form">
+    <input type="hidden" name="occupations_order" value="">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const occupations = {{ occupations|safe }};
+const dragContainer = document.getElementById('drag-container');
+
+function createDraggable(index, name) {
+    const dI = document.createElement('div');
+    dI.classList.add('drag-item');
+    dI.setAttribute('draggable', true);
+    dI.id = `occupation_${index}`;
+    dI.dataset.occupationName = name;
+    dI.textContent = name;
+    attachDragEventListeners(dI);
+    return dI;
+}
+
+function renderDragDrop() {
+    occupations.forEach((occupation, index) => {
+        const dragItem = createDraggable(index, occupation);
+        dragContainer.appendChild(dragItem);
+    });
+}
+
+function attachDragEventListeners(item) {
+    item.addEventListener('dragstart', handleDragStart);
+    item.addEventListener('dragend', handleDragEnd);
+}
+
+function handleDragStart(e) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData("text/plain", this.id);
+    e.target.classList.add('dragging');
+}
+
+function handleDragEnd(e) {
+    e.target.classList.remove('dragging');
+}
+
+function allowDrop(e) {
+    e.preventDefault();
+}
+
+function resetToUnrankedStyle(item) {
+    item.classList.remove('ranked-item');
+    item.classList.add('drag-item');
+    item.style.removeProperty('width');
+    item.style.removeProperty('height');
+    item.style.removeProperty('justify-content');
+    item.style.removeProperty('padding-left');
+}
+
+function handleRankDrop(e) {
+    e.preventDefault();
+    const dropTarget = e.currentTarget;
+    const draggedItemId = e.dataTransfer.getData("text/plain");
+    const draggedItem = document.getElementById(draggedItemId);
+    if (!draggedItem) return;
+
+    const rankPosition = parseInt(dropTarget.id.split('-')[1]);
+
+    const cascade = [draggedItem];
+    for (let i = rankPosition; i < 9; i++) {
+        const currentSlot = document.getElementById(`rank-${i}`);
+        const currentItem = currentSlot.querySelector('.drag-item');
+        if (currentItem && currentItem !== draggedItem) {
+            cascade.push(currentItem);
+        } else {
+            break;
+        }
+    }
+
+    cascade.forEach(item => item.parentNode?.removeChild(item));
+
+    for (let i = 0; i < cascade.length && rankPosition + i < 9; i++) {
+        const targetSlot = document.getElementById(`rank-${rankPosition + i}`);
+        const rankNumber = targetSlot.querySelector('.rank-number');
+        targetSlot.innerHTML = '';
+        if (rankNumber) targetSlot.appendChild(rankNumber);
+        const item = cascade[i];
+        item.classList.add('ranked-item');
+        targetSlot.appendChild(item);
+    }
+
+    for (let i = 9; i < rankPosition + cascade.length; i++) {
+        const overflowItem = cascade[i - rankPosition];
+        resetToUnrankedStyle(overflowItem);
+        dragContainer.appendChild(overflowItem);
+    }
+
+    rankingUpdate();
+}
+
+function handleUnrankDrop(e) {
+    e.preventDefault();
+    const draggedItemId = e.dataTransfer.getData("text/plain");
+    const draggedItem = document.getElementById(draggedItemId);
+    if (!draggedItem) return;
+
+    if (draggedItem.parentNode && draggedItem.parentNode.classList.contains('rank-item')) {
+        const rankItem = draggedItem.parentNode;
+        const rankNumber = rankItem.querySelector('.rank-number');
+        rankItem.removeChild(draggedItem);
+        resetToUnrankedStyle(draggedItem);
+        rankItem.innerHTML = '';
+        if (rankNumber) rankItem.appendChild(rankNumber);
+        dragContainer.appendChild(draggedItem);
+        rankingUpdate();
+    }
+}
+
+function rankingUpdate() {
+    const orderedValues = [];
+    const rankers = document.getElementsByClassName("rank-item");
+    let count_ranked = 0;
+
+    for (let i = 0; i < rankers.length; i++) {
+        const rankedItem = rankers[i].querySelector(".drag-item");
+        if (rankedItem) {
+            orderedValues.push(rankedItem.dataset.occupationName);
+            count_ranked++;
+        }
+    }
+
+    document.querySelector("input[name='occupations_order']").value = orderedValues.join("|");
+    document.getElementById("submit-button").disabled = count_ranked !== occupations.length;
+}
+
+document.getElementById('submit-button').addEventListener('click', () => {
+    document.getElementById('occupation-form').submit();
+});
+
+renderDragDrop();
+</script>
+{% endblock %}

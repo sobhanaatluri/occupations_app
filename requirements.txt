@@ -1,0 +1,12 @@
+otree>=5.0.0
+psycopg2
+pandas
+numpy
+scikit-learn
+openai==0.28
+reportlab
+plotly
+matplotlib
+django
+openpyxl
+kaleido==0.2.1
